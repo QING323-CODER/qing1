@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>财务管理系统 - 差旅费报销单录入</title>
+    <style>
+        /* 基础样式将在后续步骤中添加 */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .form-section {
+            margin-bottom: 25px;
+        }
+        .form-section h2 {
+            color: #4CAF50;
+            font-size: 18px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4CAF50;
+            padding-left: 10px;
+        }
+        .form-row {
+            display: flex;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        .form-group:last-child {
+            margin-right: 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="date"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .add-row-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .add-row-btn:hover {
+            background-color: #0b7dda;
+        }
+        .remove-row-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .remove-row-btn:hover {
+            background-color: #d32f2f;
+        }
+        .error {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            border-left: 4px solid #c62828;
+        }
+        .success-message {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            border-left: 4px solid #2e7d32;
+        }
+        .total-section {
+            margin-top: 20px;
+            text-align: right;
+            font-weight: bold;
+        }
+        .form-actions {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .submit-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 15px;
+        }
+        .submit-btn:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .reset-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .reset-btn:hover {
+            background-color: #d32f2f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+            }
+            .form-row {
+                flex-direction: column;
+            }
+            .form-group {
+                width: 100%;
+                margin-right: 0;
+            }
+            .table-container {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            .form-actions {
+                display: flex;
+                flex-direction: column;
+            }
+            .submit-btn,
+            .reset-btn {
+                margin-right: 0;
+                margin-bottom: 10px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>差旅费报销单录入</h1>
+        
+        <form id="expenseForm">
+            <!-- 个人信息部分 -->
+            <div class="form-section">
+                <h2>个人信息</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">姓名 *</label>
+                        <input type="text" id="name" name="name" required>
+                        <div class="error" id="nameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="department">部门 *</label>
+                        <input type="text" id="department" name="department" required>
+                        <div class="error" id="departmentError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="position">职位 *</label>
+                        <input type="text" id="position" name="position" required>
+                        <div class="error" id="positionError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeId">工号 *</label>
+                        <input type="text" id="employeeId" name="employeeId" required>
+                        <div class="error" id="employeeIdError"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 报销明细部分 -->
+            <div class="form-section">
+                <h2>报销明细</h2>
+                <div class="table-container">
+                    <table id="expenseTable">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>出差事由</th>
+                                <th>交通费用</th>
+                                <th>住宿费用</th>
+                                <th>餐饮费用</th>
+                                <th>其他费用</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="expense-row">
+                                <td><input type="date" class="expense-date" name="expenseDate[]" value="" required></td>
+                                <td><input type="text" class="expense-reason" name="expenseReason[]" required></td>
+                                <td><input type="number" class="expense-transport" name="expenseTransport[]" min="0" step="0.01" value="0" required></td>
+                                <td><input type="number" class="expense-accommodation" name="expenseAccommodation[]" min="0" step="0.01" value="0" required></td>
+                                <td><input type="number" class="expense-food" name="expenseFood[]" min="0" step="0.01" value="0" required></td>
+                                <td><input type="number" class="expense-other" name="expenseOther[]" min="0" step="0.01" value="0" required></td>
+                                <td><button type="button" class="remove-row-btn">删除</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" id="addRowBtn" class="add-row-btn">添加报销行</button>
+                
+                <div class="total-section">
+                    <p>总金额：¥<span id="totalAmount">0.00</span></p>
+                </div>
+            </div>
+            
+            <!-- 表单提交按钮 -->
+            <div class="form-actions">
+                <button type="submit" class="submit-btn">提交报销单</button>
+                <button type="reset" class="reset-btn">重置表单</button>
+            </div>
+        </form>
+        
+        <script>
+            // 表单验证和交互逻辑
+            document.addEventListener('DOMContentLoaded', function() {
+                // 添加新行功能
+                const addRowBtn = document.getElementById('addRowBtn');
+                const expenseTable = document.getElementById('expenseTable').getElementsByTagName('tbody')[0];
+                
+                addRowBtn.addEventListener('click', function() {
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'expense-row';
+                    newRow.style.opacity = '0';
+                    newRow.innerHTML = `
+                        <td><input type="date" class="expense-date" name="expenseDate[]" value="${today}" required></td>
+                        <td><input type="text" class="expense-reason" name="expenseReason[]" required></td>
+                        <td><input type="number" class="expense-transport" name="expenseTransport[]" min="0" step="0.01" value="0" required></td>
+                        <td><input type="number" class="expense-accommodation" name="expenseAccommodation[]" min="0" step="0.01" value="0" required></td>
+                        <td><input type="number" class="expense-food" name="expenseFood[]" min="0" step="0.01" value="0" required></td>
+                        <td><input type="number" class="expense-other" name="expenseOther[]" min="0" step="0.01" value="0" required></td>
+                        <td><button type="button" class="remove-row-btn">删除</button></td>
+                    `;
+                    expenseTable.appendChild(newRow);
+                    
+                    // 添加淡入动画
+                    setTimeout(() => {
+                        newRow.style.opacity = '1';
+                        newRow.style.transition = 'opacity 0.3s';
+                    }, 10);
+                    
+                    // 为新添加的行添加事件监听
+                    attachRowEvents(newRow);
+                });
+                
+                // 删除行功能
+                function attachRowEvents(row) {
+                    const removeBtn = row.querySelector('.remove-row-btn');
+                    removeBtn.addEventListener('click', function() {
+                        if (document.querySelectorAll('.expense-row').length > 1) {
+                            // 添加删除动画
+                            row.style.opacity = '0';
+                            row.style.transition = 'opacity 0.3s';
+                            setTimeout(() => {
+                                row.remove();
+                                updateTotal();
+                            }, 300);
+                        } else {
+                            alert('至少保留一行报销记录');
+                        }
+                    });
+                    
+                    // 为金额输入框添加事件监听
+                    const amountInputs = row.querySelectorAll('input[type="number"]');
+                    amountInputs.forEach(input => {
+                        input.addEventListener('input', updateTotal);
+                    });
+                }
+                
+                // 设置默认日期为今天
+                const today = new Date().toISOString().split('T')[0];
+                document.querySelectorAll('.expense-date').forEach(dateInput => {
+                    dateInput.value = today;
+                });
+                
+                // 初始化所有行的事件监听
+                document.querySelectorAll('.expense-row').forEach(row => {
+                    attachRowEvents(row);
+                });
+                
+                // 更新总金额
+                function updateTotal() {
+                    let total = 0;
+                    document.querySelectorAll('.expense-row').forEach(row => {
+                        const transport = parseFloat(row.querySelector('.expense-transport').value) || 0;
+                        const accommodation = parseFloat(row.querySelector('.expense-accommodation').value) || 0;
+                        const food = parseFloat(row.querySelector('.expense-food').value) || 0;
+                        const other = parseFloat(row.querySelector('.expense-other').value) || 0;
+                        
+                        total += transport + accommodation + food + other;
+                    });
+                    document.getElementById('totalAmount').textContent = total.toFixed(2);
+                }
+                
+                // 表单验证
+                const form = document.getElementById('expenseForm');
+                const requiredFields = ['name', 'department', 'position', 'employeeId'];
+                
+                // 为必填字段添加实时验证
+                requiredFields.forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    const errorElem = document.getElementById(fieldId + 'Error');
+                    
+                    field.addEventListener('blur', function() {
+                        if (!field.value.trim()) {
+                            errorElem.textContent = '此字段为必填项';
+                        } else {
+                            errorElem.textContent = '';
+                            // 工号格式验证
+                            if (fieldId === 'employeeId') {
+                                const empIdPattern = /^[A-Za-z0-9]{6,10}$/;
+                                if (!empIdPattern.test(field.value.trim())) {
+                                    errorElem.textContent = '工号格式不正确（6-10位字母或数字）';
+                                }
+                            }
+                        }
+                    });
+                });
+                
+                form.addEventListener('submit', function(event) {
+                    let isValid = true;
+                    
+                    // 验证必填字段
+                    requiredFields.forEach(fieldId => {
+                        const field = document.getElementById(fieldId);
+                        const errorElem = document.getElementById(fieldId + 'Error');
+                        
+                        if (!field.value.trim()) {
+                            errorElem.textContent = '此字段为必填项';
+                            isValid = false;
+                        } else {
+                            errorElem.textContent = '';
+                            // 工号格式验证
+                            if (fieldId === 'employeeId') {
+                                const empIdPattern = /^[A-Za-z0-9]{6,10}$/;
+                                if (!empIdPattern.test(field.value.trim())) {
+                                    errorElem.textContent = '工号格式不正确（6-10位字母或数字）';
+                                    isValid = false;
+                                }
+                            }
+                        }
+                    });
+                    
+                    // 验证至少有一行报销记录有非零金额
+                    let hasExpense = false;
+                    document.querySelectorAll('.expense-row').forEach(row => {
+                        const transport = parseFloat(row.querySelector('.expense-transport').value) || 0;
+                        const accommodation = parseFloat(row.querySelector('.expense-accommodation').value) || 0;
+                        const food = parseFloat(row.querySelector('.expense-food').value) || 0;
+                        const other = parseFloat(row.querySelector('.expense-other').value) || 0;
+                        
+                        if (transport > 0 || accommodation > 0 || food > 0 || other > 0) {
+                            hasExpense = true;
+                        }
+                    });
+                    
+                    if (!hasExpense) {
+                        alert('请至少填写一项报销金额');
+                        isValid = false;
+                    }
+                    
+                    if (!isValid) {
+                        event.preventDefault();
+                        // 添加表单错误状态提示
+                        const errorMessage = document.createElement('div');
+                        errorMessage.className = 'error-message';
+                        errorMessage.textContent = '请修正表单中的错误后再提交';
+                        
+                        // 移除之前的错误提示
+                        const existingError = document.querySelector('.error-message');
+                        if (existingError) {
+                            existingError.remove();
+                        }
+                        
+                        form.parentNode.insertBefore(errorMessage, form);
+                    } else {
+                        // 移除错误提示
+                        const existingError = document.querySelector('.error-message');
+                        if (existingError) {
+                            existingError.remove();
+                        }
+                        
+                        // 模拟表单提交
+                        alert('报销单提交成功！总金额：¥' + document.getElementById('totalAmount').textContent);
+                        
+                        // 显示成功消息
+                        const successMessage = document.createElement('div');
+                        successMessage.className = 'success-message';
+                        successMessage.textContent = '报销单提交成功！';
+                        
+                        form.parentNode.insertBefore(successMessage, form);
+                        
+                        // 3秒后自动隐藏成功消息
+                        setTimeout(() => {
+                            successMessage.remove();
+                        }, 3000);
+                    }
+                });
+            });
+        </script>
+        
+        <script>
+            // 重置按钮事件处理
+            document.querySelector('.reset-btn').addEventListener('click', function() {
+                // 清除错误消息
+                document.querySelectorAll('.error').forEach(el => {
+                    el.textContent = '';
+                });
+                const existingError = document.querySelector('.error-message');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                // 重置总金额
+                setTimeout(() => {
+                    document.getElementById('totalAmount').textContent = '0.00';
+                }, 100);
+            });
+        </script>
+    </div>
+</body>
+</html>

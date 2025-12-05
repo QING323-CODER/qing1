@@ -297,20 +297,8 @@
         <h1>五子棋小游戏 - 在线对战</h1>
         
         <!-- 房间管理面板 -->
-        <div id="room-panel" class="panel">
-            <h2>房间管理</h2>
-            <div class="room-actions">
-                <button id="create-room-btn">创建房间</button>
-                <div class="join-room">
-                    <input type="text" id="room-id-input" placeholder="房间ID" maxlength="6">
-                    <button id="join-room-btn">加入房间</button>
-                </div>
-            </div>
-            <div id="room-info" class="room-info"></div>
-        </div>
-        
         <!-- 游戏面板 -->
-        <div id="game-panel" class="panel" style="display: none;">
+        <div id="game-panel" class="panel">
             <div class="status-panel">
                 <div class="player-info">
                     当前玩家：<span id="current-player">黑方</span>
@@ -344,17 +332,50 @@
             measurementId: "G-BS7NYWJVPP"
         };
         
+        // 全局变量声明
+        let gameRef = null;
+        let isMyTurn = false;
+        let database = null;
+        let playerRole = null;
+        
+        // DOM元素
+        const boardElement = document.getElementById('board');
+        const currentPlayerElement = document.getElementById('current-player');
+        const gameStatusElement = document.getElementById('game-status');
+        const playerRoleElement = document.getElementById('player-role');
+        const resetButton = document.getElementById('reset-btn');
+        
+        // 房间管理DOM元素
+        const gamePanel = document.getElementById('game-panel');
+        const leaveRoomButton = document.getElementById('leave-room-btn');
+        
         // 初始化Firebase
         console.log('开始初始化Firebase');
-        let database;
         try {
             firebase.initializeApp(firebaseConfig);
             console.log('Firebase初始化成功');
             database = firebase.database();
             console.log('Firebase数据库获取成功');
+            
+            // 设置游戏引用（使用固定路径）
+            gameRef = database.ref('game');
+            
+            // 设置初始游戏数据（如果不存在）
+            gameRef.once('value').then(snapshot => {
+                if (!snapshot.exists()) {
+                    const initialGameData = {
+                        board: Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null)),
+                        currentPlayer: BLACK,
+                        gameStatus: 'playing'
+                    };
+                    gameRef.set(initialGameData);
+                }
+            });
+            
+            // 设置游戏监听器
+            setupRoomListeners();
         } catch (error) {
             console.error('Firebase初始化失败：', error);
-            roomInfo.innerHTML = `<p style="color: red;">Firebase初始化失败：${error.message}</p>`;
         }
         
         // 游戏常量
@@ -370,29 +391,7 @@
         let currentPlayer;
         let gameStatus;
         
-        // 在线对战状态
-        let roomId = null;
-        let playerRole = null;
-        let gameRef = null;
-        let roomRef = null;
-        let isMyTurn = false;
-        let database = null;
-        
-        // DOM元素
-        const boardElement = document.getElementById('board');
-        const currentPlayerElement = document.getElementById('current-player');
-        const gameStatusElement = document.getElementById('game-status');
-        const playerRoleElement = document.getElementById('player-role');
-        const resetButton = document.getElementById('reset-btn');
-        
-        // 房间管理DOM元素
-        const roomPanel = document.getElementById('room-panel');
-        const gamePanel = document.getElementById('game-panel');
-        const roomInfo = document.getElementById('room-info');
-        const createRoomButton = document.getElementById('create-room-btn');
-        const roomIdInput = document.getElementById('room-id-input');
-        const joinRoomButton = document.getElementById('join-room-btn');
-        const leaveRoomButton = document.getElementById('leave-room-btn');
+        // 在线对战状态变量已移到Firebase初始化代码之前
         
         // 初始化音频上下文
         function initAudioContext() {
@@ -686,125 +685,19 @@
             }
         }
         
-        // 创建房间
-        function createRoom() {
-            console.log('创建房间按钮被点击');
-            
-            // 检查database是否初始化
-            if (!database) {
-                console.error('Firebase数据库未初始化');
-                roomInfo.innerHTML = '<p style="color: red;">Firebase数据库未初始化，请刷新页面重试</p>';
-                return;
-            }
-            
-            // 生成6位随机房间ID
-            roomId = Math.floor(100000 + Math.random() * 900000).toString();
-            console.log('生成的房间ID：', roomId);
-            
-            try {
-                // 初始化游戏数据
-                const initialGameData = {
-                    board: Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null)),
-                    currentPlayer: BLACK,
-                    gameStatus: 'waiting',
-                    players: {
-                        black: 'player1',
-                        white: null
-                    },
-                    createdAt: firebase.database.ServerValue.TIMESTAMP
-                };
-                
-                // 创建房间
-                roomRef = database.ref(`rooms/${roomId}`);
-                gameRef = roomRef.child('game');
-                console.log('房间引用创建成功');
-                
-                // 设置初始游戏数据
-                gameRef.set(initialGameData).then(() => {
-                    console.log('房间创建成功');
-                    // 设置当前玩家为黑方
-                    playerRole = BLACK;
-                    isMyTurn = false;
-                    
-                    // 更新界面
-                    roomInfo.innerHTML = `<p>房间创建成功！</p><p>房间ID：<strong>${roomId}</strong></p><p>等待玩家加入...</p>`;
-                    
-                    // 监听房间变化
-                    setupRoomListeners();
-                }).catch(error => {
-                    console.error('创建房间失败：', error);
-                    roomInfo.innerHTML = `<p style="color: red;">创建房间失败：${error.message}</p>`;
-                });
-            } catch (error) {
-                console.error('创建房间过程中发生异常：', error);
-                roomInfo.innerHTML = `<p style="color: red;">创建房间失败：${error.message}</p>`;
-            }
-        }
+        // 创建房间和加入房间函数已移除，游戏直接进入两人对战模式
         
-        // 加入房间
-        function joinRoom() {
-            roomId = roomIdInput.value.trim();
-            
-            if (!roomId) {
-                roomInfo.innerHTML = '<p style="color: red;">请输入房间ID</p>';
-                return;
-            }
-            
-            // 检查房间是否存在
-            roomRef = database.ref(`rooms/${roomId}`);
-            gameRef = roomRef.child('game');
-            
-            roomRef.once('value', (snapshot) => {
-                const roomData = snapshot.val();
-                
-                if (!roomData) {
-                    roomInfo.innerHTML = '<p style="color: red;">房间不存在</p>';
-                    return;
-                }
-                
-                // 检查房间是否已满
-                if (roomData.game.players.white) {
-                    roomInfo.innerHTML = '<p style="color: red;">房间已满</p>';
-                    return;
-                }
-                
-                // 设置当前玩家为白方
-                playerRole = WHITE;
-                isMyTurn = false;
-                
-                // 更新房间信息
-                roomRef.child('game/players/white').set('player2');
-                roomRef.child('game/gameStatus').set('playing');
-                
-                // 初始化游戏
-                initGame();
-                
-                // 更新界面
-                roomPanel.style.display = 'none';
-                gamePanel.style.display = 'block';
-                
-                // 监听房间变化
-                setupRoomListeners();
-            }).catch(error => {
-                console.error('加入房间失败：', error);
-                roomInfo.innerHTML = `<p style="color: red;">加入房间失败：${error.message}</p>`;
-            });
-        }
-        
-        // 设置房间监听器
+        // 设置游戏监听器
         function setupRoomListeners() {
-            if (!gameRef) return;
-            
             // 监听游戏数据变化
             gameRef.on('value', (snapshot) => {
                 const gameData = snapshot.val();
-                
                 if (!gameData) return;
                 
                 // 更新游戏状态
-                board = gameData.board || Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null));
-                currentPlayer = gameData.currentPlayer || BLACK;
-                gameStatus = gameData.gameStatus || 'playing';
+                board = gameData.board;
+                currentPlayer = gameData.currentPlayer;
+                gameStatus = gameData.gameStatus;
                 
                 // 更新玩家回合
                 isMyTurn = playerRole === currentPlayer;
@@ -814,23 +707,6 @@
                 
                 // 更新UI
                 updateUI();
-                
-                // 如果是等待状态且玩家已满，开始游戏
-                if (gameData.players && gameData.players.black && gameData.players.white && gameStatus === 'waiting') {
-                    gameStatus = 'playing';
-                    
-                    // 切换到游戏面板
-                    roomPanel.style.display = 'none';
-                    gamePanel.style.display = 'block';
-                    
-                    // 黑方先走
-                    if (playerRole === BLACK) {
-                        isMyTurn = true;
-                    }
-                    
-                    // 更新UI
-                    updateUI();
-                }
             });
         }
         
@@ -850,29 +726,10 @@
             }
         }
         
-        // 离开房间
+        // 重置游戏
         function leaveRoom() {
-            if (!roomRef) return;
-            
-            // 移除监听器
-            gameRef.off();
-            roomRef.off();
-            
-            // 清空房间信息
-            roomId = null;
-            playerRole = null;
-            gameRef = null;
-            roomRef = null;
-            isMyTurn = false;
-            
-            // 重置游戏
-            initGame();
-            
-            // 更新界面
-            gamePanel.style.display = 'none';
-            roomPanel.style.display = 'block';
-            roomInfo.innerHTML = '';
-            roomIdInput.value = '';
+            // 重新初始化游戏
+            resetGame();
         }
         
         // 重新开始游戏
@@ -894,19 +751,19 @@
         
         // 绑定事件
         resetButton.addEventListener('click', resetGame);
-        createRoomButton.addEventListener('click', createRoom);
-        joinRoomButton.addEventListener('click', joinRoom);
-        leaveRoomButton.addEventListener('click', leaveRoom);
-        
-        // 回车加入房间
-        roomIdInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                joinRoom();
-            }
-        });
         
         // 页面加载完成后初始化游戏
-        window.addEventListener('load', initGame);
+        window.addEventListener('load', () => {
+            initGame();
+            
+            // 初始化玩家角色
+            playerRole = BLACK;
+            isMyTurn = true;
+            gameStatus = 'playing';
+            
+            // 更新UI
+            updateUI();
+        });
     </script>
 </body>
 </html>
